@@ -2,6 +2,8 @@ import pandas as pd
 import PySimpleGUI as psg
 import matplotlib.pyplot as plt 
 from typing import List
+import time
+from datetime import datetime
 
 languageList = [
     "Abap", "Ada", "C/C++", "C#", "Cobol", "Dart", "Delphi/Pascal", "Go", "Groovy",
@@ -10,16 +12,40 @@ languageList = [
     "TypeScript", "VBA", "Visual Basic"
 ]
 
-#GUI setup
-layout = [
-    [psg.Text("Programming Language Popularity")],
-    [psg.Text("Languages"), psg.Input(key="-LANGS-", default_text="Python,Ada...")],
-    [psg.Text("Starting Date"), psg.Input(key="-START-", default_text="YYYY-MM")],
-    [psg.Text("Ending Date"), psg.Input(key="-END-", default_text="YYYY-MM")],
-    [psg.Button("Enter", key="-ENTER-")]   
-]
+themes = ["Black", "DarkAmber", "Tan", "Topanga", "Reddit", "Default"]
 
-window = psg.Window("Language Popularity", layout)
+def createWindow(): 
+    # layout = [
+    #     [psg.Menu([["Theme", themes]])],
+    #     [psg.Text("Programming Language Popularity", font=("Helvetica", 25), justification="center")],
+    #     [psg.Text("Languages", justification="left"), psg.Input(justification="left", key="-LANGS-", default_text="Python,Ada...")],
+    #     [psg.Text("Starting Date", justification="left"), psg.Input(justification="right", key="-START-", default_text="YYYY-MM")],
+    #     [psg.Text("Ending Date"), psg.Input(key="-END-", default_text="YYYY-MM")],
+    #     [psg.Button("Enter", key="-ENTER-")]   
+    # ]
+    layout = [
+        [psg.Menu([["Theme", themes]])],
+
+        [psg.Text("Programming Language Popularity", font=("Helvetica", 25), justification="center")],
+
+        # Language input row
+        [psg.Text("Languages", size=(15, 1), justification="left"), 
+        psg.Input(size=(30, 1), justification="left", key="-LANGS-", default_text="Python, Ada...")],
+
+        [psg.Text("Starting Date", size=(15, 1), justification="left"), 
+        psg.Input(size=(30, 1), justification="left", key="-START-", default_text="YYYY-MM")],
+
+        [psg.Text("Ending Date", size=(15, 1), justification="left"), 
+        psg.Input(size=(30, 1), justification="left", key="-END-", default_text="YYYY-MM")],
+
+        [psg.Checkbox("Auto-Export", default=True, key="-EXPORT-")],
+
+        [psg.Button("Enter", key="-ENTER-", size=(10, 1), pad=((0, 0), (10, 10)))],
+    ]
+
+    return psg.Window("Language Popularity", layout)
+
+window = createWindow()
 
 df = pd.read_csv("languages.csv")
 df["Date"] = pd.to_datetime(df["Date"])
@@ -32,8 +58,10 @@ def plotGraph(langs, start, end):
         plt.plot(endDf["Date"], endDf[lang], label=lang)
     plt.xlabel("Date (YYYY-MM)")
     plt.ylabel("Use (%)")
-    plt.title(f"Popularity of {", ".join(langs)}")
+    plt.title(f"Popularity of {', '.join(langs)}")
     plt.legend()
+    if values["-EXPORT-"]:
+        plt.savefig(f"{'_'.join(langs)}_popularity_{datetime.now().strftime('%H_%M_%S')}.png")
     plt.show()
 
 def errorPopup(err: str):
@@ -64,7 +92,7 @@ while True:
                     case "Javascript":
                         langs = replaceArr(langs,"JavaScript","Javascript")
                     case "Js":
-                        langs = replaceArr(langs,"Javascript","Js")
+                        langs = replaceArr(langs,"JavaScript","Js")
                     case "Php":
                         langs = replaceArr(langs,"PHP","Php")
                     case "Visual basic":
@@ -93,6 +121,11 @@ while True:
             error = True
         if not error:
             plotGraph(langs, startDate, endDate)
+    
+    if event in themes:
+        window.close()
+        psg.theme(event.lower())
+        window = createWindow()
 window.close()
 
 
